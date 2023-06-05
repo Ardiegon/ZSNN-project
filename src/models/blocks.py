@@ -29,6 +29,21 @@ class Encoder(nn.Module):
         p = self.pool(s)
         return s, p
 
+class Decoder(nn.Module):
+    def __init__(self, in_c, out_c):
+        super().__init__()
+
+        self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
+        self.ag = AttentionGate(in_c, out_c)
+        self.c1 = Conv(in_c[0]+out_c, out_c)
+
+    def forward(self, x, s):
+        x = self.up(x)
+        s = self.ag(x, s)
+        x = torch.cat([x, s], axis=1)
+        x = self.c1(x)
+        return x
+
 class AttentionGate(nn.Module):
     def __init__(self, in_c, out_c):
         super().__init__()
@@ -54,17 +69,17 @@ class AttentionGate(nn.Module):
         out = self.output(out)
         return out * s
 
-class Decoder(nn.Module):
-    def __init__(self, in_c, out_c):
+    
+class PositionEmbeddings(nn.Module):
+    def __init__(self, dim):
         super().__init__()
+        self.dim = dim
 
-        self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
-        self.ag = AttentionGate(in_c, out_c)
-        self.c1 = Conv(in_c[0]+out_c, out_c)
-
-    def forward(self, x, s):
-        x = self.up(x)
-        s = self.ag(x, s)
-        x = torch.cat([x, s], axis=1)
-        x = self.c1(x)
-        return x
+    def forward(self, time):
+        device = time.device
+        half_dim = self.dim // 2
+        embeddings = torch.log(10000) / (half_dim - 1)
+        embeddings = torch.exp(torch.arange(half_dim, device=device) * -embeddings)
+        embeddings = time[:, None] * embeddings[None, :]
+        embeddings = torch.cat((embeddings.sin(), embeddings.cos()), dim=-1)
+        return embeddings
