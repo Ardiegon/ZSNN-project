@@ -1,18 +1,17 @@
 import torch
 import torch.nn.functional as F
 
-ALL_TIMESTAMPS = 300
-
 class NoiseAdder():
-    def __init__(self) -> None:
+    def __init__(self, all_timestamps) -> None:
+        self.all_timestamps = all_timestamps
         self.sqrt_recip_alphas, \
         self.sqrt_alphas_cumprod, \
         self.sqrt_one_minus_alphas_cumprod, \
         self.posterior_variance \
-            = self.calculate_alpha_factors(ALL_TIMESTAMPS)
+            = self.calculate_alpha_factors()
 
-    def calculate_alpha_factors(self, timestamps = ALL_TIMESTAMPS):
-        betas = torch.linspace(0.0001, 0.02, timestamps)
+    def calculate_alpha_factors(self):
+        betas = torch.linspace(0.0001, 0.02, self.all_timestamps)
         alphas = 1. - betas
         alphas_cumprod = torch.cumprod(alphas, axis=0)
         alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.0)

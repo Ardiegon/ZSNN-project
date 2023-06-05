@@ -1,4 +1,5 @@
 import json
+import torch
 from datetime import datetime
 
 def read_config(path):

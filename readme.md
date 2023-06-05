@@ -22,11 +22,18 @@ conda develop src .
 ## Setup
 Fulfill dateset path inside *src/configs/path.py*:
 ```python
-DATASET_DIR_PATH = "path/to/your/dataset"
+MAIN_DATASET_DIR_PATH = "path/to/your/dataset"
 ```
 ***Last file of the path should be 'Console_sliced'***
 
 Check if everything is working with
 ```bash
 python src/scripts/train.py --model DummyModel
+```
+
+## Use 
+
+HuggingFace generator train:
+```bash
+python src/scripts/train.py -m UNet2DModel -c src/configs/models/default_UNet2DModel.json 
 ```
