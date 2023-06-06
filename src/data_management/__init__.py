@@ -8,8 +8,8 @@ import data_management.cocodataset as main
 import data_management.additional_dataset as additional
 
 class DatasetTypes(Enum):
-    MAIN = 1
-    ADDITIONAL = 2
+    MAIN = "main"
+    ADDITIONAL = "additional"
 
 def get_dataset(dataset_type):
     map_type_to_dataset = {

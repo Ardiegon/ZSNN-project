@@ -30,6 +30,8 @@ def initialize_opts(args):
     curr_checkpoints_dir = os.path.join(CHECKPOINTS_PATH, train_id)
     os.makedirs(curr_checkpoints_dir, exist_ok=True)
 
+    device = "cuda" if torch.cuda.is_available() and args.device=="cuda" else "cpu"
+
     logging.basicConfig(filename=os.path.join(curr_checkpoints_dir, "alog.txt"),
                     filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
@@ -39,7 +41,7 @@ def initialize_opts(args):
     dataset = get_dataset(args.dataset)
     dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
     
-    model = get_model(args.model, config_path = args.config)
+    model = get_model(args.model, config_path = args.config).to(device)
 
     noise_adder = NoiseAdder(MAX_TIMESTAMPS)
     
@@ -47,7 +49,8 @@ def initialize_opts(args):
         "model": model,
         "noise_adder": noise_adder,
         "dataloader": dataloader,
-        "checkpoints_dir": curr_checkpoints_dir
+        "checkpoints_dir": curr_checkpoints_dir,
+        "device": device
     }
 
 def parse_args():
@@ -64,15 +67,16 @@ def main(args):
     model = opts["model"]
     noise_adder = opts["noise_adder"]
     dataloader = opts["dataloader"]
+    device = opts["device"]
 
-    device = "cuda" if torch.cuda.is_available() and args.device=="cuda" else "cpu"
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Model params: {total_params}")
     print(f"device: {device}")
-    opts["model"].to(device)
     optimizer = Adam(model.parameters(), lr=0.001)
     epochs = 100
 
     for epoch in tqdm(range(epochs), desc="Epochs", position=0):
-        for step, batch in tqdm(dataloader, desc="Batches", position=1):
+        for batch in tqdm(dataloader, desc="Batches", position=1):
             optimizer.zero_grad()
 
             timestamp = torch.randint(0, MAX_TIMESTAMPS, (BATCH_SIZE,), device=device).long()

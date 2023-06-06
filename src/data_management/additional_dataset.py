@@ -34,4 +34,4 @@ class SimpleImageDataset(Dataset):
         if self.transform is not None:
             image = self.transform(image)
         
-        return image, image_name
+        return image
