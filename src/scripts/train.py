@@ -43,7 +43,7 @@ def initialize_opts(args):
     
     model = get_model(args.model, config_path = args.config).to(device)
 
-    noise_adder = NoiseAdder(MAX_TIMESTAMPS)
+    noise_adder = NoiseAdder(MAX_TIMESTAMPS, device)
     
     return {
         "model": model,

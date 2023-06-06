@@ -5,12 +5,12 @@ from torchvision import transforms
 from torch.utils.data import Dataset
 
 from configs.path import ADDITIONAL_TRAIN_DATASET_DIR
-
+from configs.general import IMG_SIZE
 
 def get_dataset():
     image_transforms = transforms.Compose([
         transforms.Grayscale(),
-        transforms.Resize((256,256)),
+        transforms.Resize((IMG_SIZE,IMG_SIZE)),
         transforms.ToTensor(),
         transforms.Lambda(lambda t: (t * 2) - 1) 
     ])

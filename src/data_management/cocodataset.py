@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 from torchvision.datasets import CocoDetection
 from torchvision import transforms
 from configs.path import MAIN_TRAIN_DATASET_DIR, MAIN_ANNOTATIONS_PATH
+from configs.general import IMG_SIZE
     
 def get_dataset():
     image_transforms = transforms.Compose([
         transforms.Grayscale(),
-        transforms.Resize((256,256)),
+        transforms.Resize((IMG_SIZE,IMG_SIZE)),
         transforms.ToTensor(),
         transforms.Lambda(lambda t: (t * 2) - 1) 
     ])
