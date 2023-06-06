@@ -35,5 +35,5 @@ python src/scripts/train.py --model DummyModel
 
 HuggingFace generator train:
 ```bash
-python src/scripts/train.py -m UNet2DModel -c src/configs/models/default_UNet2DModel.json 
+python src/scripts/train.py -m UNet2DModelAdapted -c src/configs/models/default_UNet2DModel.json 
 ```

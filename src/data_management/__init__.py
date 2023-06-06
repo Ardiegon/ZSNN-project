@@ -18,7 +18,7 @@ def get_dataset(dataset_type):
     }
     return map_type_to_dataset[dataset_type]()
 
-def show_tensor_image(image):
+def show_tensor_image(image, write_here_instead = "", ax = None):
     reverse_transforms = transforms.Compose([
         transforms.Lambda(lambda t: (t + 1) / 2),
         transforms.Lambda(lambda t: t.permute(1, 2, 0)),
@@ -29,7 +29,14 @@ def show_tensor_image(image):
 
     if len(image.shape) == 4:
         image = image[0, :, :, :] 
-    plt.imshow(reverse_transforms(image))
-    plt.show()
+    if write_here_instead:
+        plt.imsave(write_here_instead, reverse_transforms(image))
+    else:    
+        if ax is not None:
+            ax.imshow(reverse_transforms(image), cmap='gray')
+            ax.axis("off")
+        else:
+            plt.imshow(reverse_transforms(image), cmap='gray')
+            plt.show()
     
 

@@ -10,6 +10,7 @@ class NoiseAdder():
         self.device = device
         self.all_timestamps = all_timestamps
         
+        self.betas, \
         self.sqrt_recip_alphas, \
         self.sqrt_alphas_cumprod, \
         self.sqrt_one_minus_alphas_cumprod, \
@@ -25,7 +26,7 @@ class NoiseAdder():
         sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)
         sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
         posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
-        return sqrt_recip_alphas.to(self.device), sqrt_alphas_cumprod.to(self.device), \
+        return betas.to(self.device), sqrt_recip_alphas.to(self.device), sqrt_alphas_cumprod.to(self.device), \
             sqrt_one_minus_alphas_cumprod.to(self.device), posterior_variance.to(self.device)
 
     def get_index_from_list(self, vals, timestamp, image_shape):
@@ -68,19 +69,19 @@ class NoiseAdder():
             return model_mean + torch.sqrt(posterior_variance_t) * noise 
 
     @torch.no_grad()
-    def sample_plot_image(self):
+    def sample_plot_image(self, model, path):
         img_size = IMG_SIZE
-        img = torch.randn((1, 3, img_size, img_size), device=self.device)
-        plt.figure(figsize=(15,15))
-        plt.axis('off')
+        img = torch.randn((1, 1, img_size, img_size), device=self.device)
         num_images = 10
         stepsize = int(self.all_timestamps/num_images)
-
+        fig, axs = plt.subplots(1, num_images)
+        backward_iter = 9
         for i in range(0,self.all_timestamps)[::-1]:
             t = torch.full((1,), i, device=self.device, dtype=torch.long)
-            img = self.sample_timestep(img, t)
+            img = self.sample_timestep(model, img, t)
             img = torch.clamp(img, -1.0, 1.0)
             if i % stepsize == 0:
-                plt.subplot(1, num_images, int(i/stepsize)+1)
-                show_tensor_image(img.detach().cpu())
-        plt.show()        
+                show_tensor_image(img.detach().cpu(), ax=axs[backward_iter])
+                axs[backward_iter].text(0.5,0.5, str(int(i/stepsize)+1))
+                backward_iter -= 1
+        fig.savefig(path)      
