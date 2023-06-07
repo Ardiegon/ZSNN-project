@@ -4,7 +4,7 @@ from diffusers import UNet2DModel
 
 
 class ConditionModel(nn.Module):
-    def __init__(self, config, dict_size=10, n_classes=5):
+    def __init__(self, dict_size=10, n_classes=5, **config):
         super().__init__()
         self.embeddings = nn.Embedding(dict_size, n_classes)
         self.model = UNet2DModel(**config)
@@ -12,9 +12,8 @@ class ConditionModel(nn.Module):
     def forward(self, input, timestamp, class_labels):
         bs, ch, w, h = input.shape
 
-        class_cond = self.class_emb(class_labels)
+        class_cond = self.embeddings(class_labels)
         class_cond = class_cond.view(bs, class_cond.shape[1], 1, 1).expand(bs, class_cond.shape[1], w, h)
 
         net_input = torch.cat((input, class_cond), 1)
-
         return self.model(net_input, timestamp).sample

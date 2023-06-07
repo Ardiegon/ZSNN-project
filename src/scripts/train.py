@@ -17,9 +17,10 @@ from utils import get_current_time
 from configs.path import CHECKPOINTS_PATH
 from configs.general import MAX_TIMESTAMPS, BATCH_SIZE
 
-def get_loss(model, noise_adder, image, timestep, device):
+def get_loss(model, noise_adder, batch, timestep, device):
+    image, label = batch
     image_noisy, noise = noise_adder(image, timestep, device)
-    noise_pred = model(image_noisy, timestep)
+    noise_pred = model(image_noisy, timestep, label)
     return F.l1_loss(noise, noise_pred)
 
 def initialize_opts(args):

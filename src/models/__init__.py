@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from models.dummy import *
 from models.generators import *
-from models.huggingface import *
+from models.aggregated_model import *
 
 
 from utils import read_config

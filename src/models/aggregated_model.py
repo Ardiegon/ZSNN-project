@@ -1,25 +1,28 @@
 import torch
 import torch.nn as nn
-from huggingface import UNet2DModelAdapted
-from conditional_model import ConditionModel
+from src.models.huggingface import UNet2DModelAdapted
+from src.models.conditional_model import ConditionModel
 
 
 class AggregatedModel(nn.Module):
-    def __init__(self, config):
+    def __init__(self, **config):
         super().__init__()
-        out_channel = config.get["out_channels"]
+        generation_config = config["image_generator"]
+        conditional_config = config["conditional_model"]
+        final_layer_config = config["final_layer"]
+        checkpoint_path = generation_config.pop("checkpoint_path")
 
-        self.image_generation_model = UNet2DModelAdapted(**config)
+        self.image_generation_model = UNet2DModelAdapted(**generation_config)
         self.condition_model = ConditionModel(
-            config,
-            dict_size=config.get("dict_size", 10),
-            n_classes=config.get("n_classes", 5)
+            **conditional_config
         )
-        checkpoint_path = config.get("checkpoint_path")
-        if config.get("state_dict_path"):
+        if checkpoint_path:
             state_dict = torch.load(checkpoint_path)["state_dict"]
             self.image_generation_model.load_state_dict(state_dict)
-        self.final_convolution = nn.Conv2d(2*out_channel, out_channel, **config.get("final_layer", {}))
+        self.final_convolution = nn.Conv2d(
+            generation_config["out_channels"]+conditional_config["out_channels"],
+            generation_config["out_channels"],
+            **final_layer_config)
 
     def forward(self, input, timestamp, class_labels):
         img_out = self.image_generation_model(input, timestamp)
