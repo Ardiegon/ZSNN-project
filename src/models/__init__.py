@@ -25,11 +25,19 @@ def _robust_issubclass(val, class_):
 def _models():
     return {name:val for name, val in globals().items() if _robust_issubclass(val, nn.Module)}
 
-def get_model(model_name, config_path):
+
+def get_model(model_name, config_path, device="cuda" if torch.cuda.is_available() else "cpu"):
+    checkpoint_path = None
     if not config_path:
         config_path = get_default_config_path(model_name)
     config = read_config(config_path)
-    return _models()[model_name](**config)
+    if "checkpoint_path" in config.keys():
+        checkpoint_path = config.pop("checkpoint_path")
+    model = _models()[model_name](**config)
+    if checkpoint_path:
+        state_dict = torch.load(checkpoint_path, map_location=torch.device(device=device))
+        model.load_state_dict(state_dict)
+    return model
 
 if __name__ == "__main__":
     print(_models())

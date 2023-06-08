@@ -32,8 +32,31 @@ python src/scripts/train.py --model DummyModel
 ```
 
 ## Use 
+If you want to use pretreined model weights in generation (recommended) and training add in specific config file weights path:
+```
+"checkpoint_path": "src/configs/weights/image_generator.pth"
+```
+
+### Training
 
 HuggingFace generator train:
 ```bash
-python src/scripts/train.py -m UNet2DModelAdapted -c src/configs/models/default_UNet2DModel.json 
+ python src/scripts/train.py -m UNet2DModelAdapted -c src/configs/models/default_UNet2DModelAdapted.json
 ```
+
+ConditionalModel train:
+```bash
+python src/scripts/train.py -m ConditionModel -c src/configs/models/default_conditional_model.json 
+```
+
+HuggingFace generator train:
+```bash
+python src/scripts/train.py -m AggregatedModel -c src/configs/models/default_aggregated_model.json
+```
+
+### Generation
+```bash
+python src/scripts/generate.py -m UNet2DModelAdapted -c src/configs/models/image_generator.json
+```
+
+

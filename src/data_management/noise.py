@@ -50,7 +50,7 @@ class NoiseAdder():
 
 
     @torch.no_grad()
-    def sample_timestep(self, model, x, t):
+    def sample_timestep(self, model, x, t, y=None):
         betas_t = self.get_index_from_list(self.betas, t, x.shape)
         sqrt_one_minus_alphas_cumprod_t = self.get_index_from_list(
             self.sqrt_one_minus_alphas_cumprod, t, x.shape
@@ -58,7 +58,7 @@ class NoiseAdder():
         sqrt_recip_alphas_t = self.get_index_from_list(self.sqrt_recip_alphas, t, x.shape)
         
         model_mean = sqrt_recip_alphas_t * (
-            x - betas_t * model(x, t) / sqrt_one_minus_alphas_cumprod_t
+            x - betas_t * model(x, t, y) / sqrt_one_minus_alphas_cumprod_t
         )
         posterior_variance_t = self.get_index_from_list(self.posterior_variance, t, x.shape)
         
@@ -66,7 +66,7 @@ class NoiseAdder():
             return model_mean
         else:
             noise = torch.randn_like(x)
-            return model_mean + torch.sqrt(posterior_variance_t) * noise 
+            return model_mean + torch.sqrt(posterior_variance_t) * noise
 
     @torch.no_grad()
     def sample_plot_image(self, model, path):
@@ -84,4 +84,4 @@ class NoiseAdder():
                 show_tensor_image(img.detach().cpu(), ax=axs[backward_iter])
                 axs[backward_iter].text(0.5,0.5, str(int(i/stepsize)+1))
                 backward_iter -= 1
-        fig.savefig(path)      
+        fig.savefig(path)
