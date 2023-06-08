@@ -3,6 +3,8 @@ import torch.nn as nn
 
 from models.dummy import *
 from models.generators import *
+from models.huggingface import *
+
 
 from utils import read_config
 from configs.path import MODEL_CONFIGS_PATH

@@ -3,3 +3,4 @@ torchaudio==2.0.2
 torchvision==0.15.2
 matplotlib==3.7.*
 pycocotools==2.0.*
+diffusers=0.16.1

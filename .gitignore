@@ -1,4 +1,7 @@
 __pycache__/
 Track2
+Additional
 notebooks/*
+src/configs/path.py
+src/checkpoints/
 .idea
