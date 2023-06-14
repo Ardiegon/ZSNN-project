@@ -1,6 +1,7 @@
 __pycache__/
 Track2
 Additional
+cifar10
 notebooks/*
 src/configs/path.py
 src/checkpoints/

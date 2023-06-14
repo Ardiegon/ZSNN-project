@@ -84,4 +84,7 @@ class NoiseAdder():
                 show_tensor_image(img.detach().cpu(), ax=axs[backward_iter])
                 axs[backward_iter].text(0.5,0.5, str(int(i/stepsize)+1))
                 backward_iter -= 1
-        fig.savefig(path)      
+        fig.savefig(path)
+        plt.clf()
+        plt.cla()
+
