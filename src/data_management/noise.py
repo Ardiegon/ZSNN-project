@@ -50,7 +50,7 @@ class NoiseAdder():
 
 
     @torch.no_grad()
-    def sample_timestep(self, model, x, t, y=None):
+    def sample_timestep(self, model, x, t, y):
         betas_t = self.get_index_from_list(self.betas, t, x.shape)
         sqrt_one_minus_alphas_cumprod_t = self.get_index_from_list(
             self.sqrt_one_minus_alphas_cumprod, t, x.shape
@@ -74,14 +74,21 @@ class NoiseAdder():
         img = torch.randn((1, 1, img_size, img_size), device=self.device)
         num_images = 10
         stepsize = int(self.all_timestamps/num_images)
-        fig, axs = plt.subplots(1, num_images)
-        backward_iter = 9
-        for i in range(0,self.all_timestamps)[::-1]:
-            t = torch.full((1,), i, device=self.device, dtype=torch.long)
-            img = self.sample_timestep(model, img, t)
-            img = torch.clamp(img, -1.0, 1.0)
-            if i % stepsize == 0:
-                show_tensor_image(img.detach().cpu(), ax=axs[backward_iter])
-                axs[backward_iter].text(0.5,0.5, str(int(i/stepsize)+1))
-                backward_iter -= 1
+        n_classes = 1
+        if hasattr(model, "n_classes"):
+            n_classes = model.n_classes
+        fig, axs = plt.subplots(n_classes, num_images)
+        n_classes = torch.arange(0, n_classes, device=self.device)
+        backward_iter = num_images - 1
+        for cond_class in n_classes:
+            for i in range(0,self.all_timestamps)[::-1]:
+                t = torch.full((1,), i, device=self.device, dtype=torch.long)
+                label = torch.unsqueeze(cond_class, dim=0)
+                img = self.sample_timestep(model, img, t, label)
+                img = torch.clamp(img, -1.0, 1.0)
+                if i % stepsize == 0:
+                    show_tensor_image(img.detach().cpu(), ax=axs[int(cond_class), backward_iter])
+                    axs[int(cond_class), backward_iter].text(0.5,0.5, str(int(i/stepsize)+1))
+                    backward_iter -= 1
+            backward_iter = num_images - 1
         fig.savefig(path)

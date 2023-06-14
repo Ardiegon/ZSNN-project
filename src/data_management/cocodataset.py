@@ -1,6 +1,7 @@
 from typing import Any, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
 
 from torchvision.datasets import CocoDetection
 from torchvision import transforms
@@ -27,4 +28,5 @@ class CocoDetectionImageOnly(CocoDetection):
             label = metadata[0]["category_id"] + 1
         else:
             label = 0
+        label = torch.tensor(label)
         return image, label
