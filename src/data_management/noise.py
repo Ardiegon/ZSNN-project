@@ -50,7 +50,7 @@ class NoiseAdder():
 
 
     @torch.no_grad()
-    def sample_timestep(self, model, x, t):
+    def sample_timestep(self, model, x, t, y):
         betas_t = self.get_index_from_list(self.betas, t, x.shape)
         sqrt_one_minus_alphas_cumprod_t = self.get_index_from_list(
             self.sqrt_one_minus_alphas_cumprod, t, x.shape
@@ -58,7 +58,7 @@ class NoiseAdder():
         sqrt_recip_alphas_t = self.get_index_from_list(self.sqrt_recip_alphas, t, x.shape)
         
         model_mean = sqrt_recip_alphas_t * (
-            x - betas_t * model(x, t) / sqrt_one_minus_alphas_cumprod_t
+            x - betas_t * model(x, t, y) / sqrt_one_minus_alphas_cumprod_t
         )
         posterior_variance_t = self.get_index_from_list(self.posterior_variance, t, x.shape)
         
@@ -66,22 +66,30 @@ class NoiseAdder():
             return model_mean
         else:
             noise = torch.randn_like(x)
-            return model_mean + torch.sqrt(posterior_variance_t) * noise 
+            return model_mean + torch.sqrt(posterior_variance_t) * noise
 
     @torch.no_grad()
     def sample_plot_image(self, model, path):
         img_size = IMG_SIZE
-        img = torch.randn((1, 1, img_size, img_size), device=self.device)
         num_images = 10
+        base_img = torch.randn((1, 1, img_size, img_size), device=self.device)
         stepsize = int(self.all_timestamps/num_images)
-        fig, axs = plt.subplots(1, num_images)
-        backward_iter = 9
-        for i in range(0,self.all_timestamps)[::-1]:
-            t = torch.full((1,), i, device=self.device, dtype=torch.long)
-            img = self.sample_timestep(model, img, t)
-            img = torch.clamp(img, -1.0, 1.0)
-            if i % stepsize == 0:
-                show_tensor_image(img.detach().cpu(), ax=axs[backward_iter])
-                axs[backward_iter].text(0.5,0.5, str(int(i/stepsize)+1))
-                backward_iter -= 1
-        fig.savefig(path)      
+        n_classes = 1
+        if hasattr(model, "n_classes"):
+            n_classes = model.n_classes
+        fig, axs = plt.subplots(n_classes, num_images)
+        n_classes = torch.arange(0, n_classes, device=self.device)
+        backward_iter = num_images - 1
+        for cond_class in n_classes:
+            img = base_img
+            for i in range(0,self.all_timestamps)[::-1]:
+                t = torch.full((1,), i, device=self.device, dtype=torch.long)
+                label = torch.unsqueeze(cond_class, dim=0)
+                img = self.sample_timestep(model, img, t, label)
+                img = torch.clamp(img, -1.0, 1.0)
+                if i % stepsize == 0:
+                    show_tensor_image(img.detach().cpu(), ax=axs[int(cond_class), backward_iter])
+                    axs[int(cond_class), backward_iter].text(0.5,0.5, str(int(i/stepsize)+1))
+                    backward_iter -= 1
+            backward_iter = num_images - 1
+        fig.savefig(path)
