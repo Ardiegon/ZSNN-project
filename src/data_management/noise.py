@@ -71,8 +71,8 @@ class NoiseAdder():
     @torch.no_grad()
     def sample_plot_image(self, model, path):
         img_size = IMG_SIZE
-        img = torch.randn((1, 1, img_size, img_size), device=self.device)
         num_images = 10
+        base_img = torch.randn((1, 1, img_size, img_size), device=self.device)
         stepsize = int(self.all_timestamps/num_images)
         n_classes = 1
         if hasattr(model, "n_classes"):
@@ -81,6 +81,7 @@ class NoiseAdder():
         n_classes = torch.arange(0, n_classes, device=self.device)
         backward_iter = num_images - 1
         for cond_class in n_classes:
+            img = base_img
             for i in range(0,self.all_timestamps)[::-1]:
                 t = torch.full((1,), i, device=self.device, dtype=torch.long)
                 label = torch.unsqueeze(cond_class, dim=0)
