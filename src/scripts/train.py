@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torch.optim import Adam
+import ot
 
 from models import get_model
 from data_management import DatasetTypes, get_dataset, show_tensor_image
@@ -17,11 +18,19 @@ from utils import get_current_time
 from configs.path import CHECKPOINTS_PATH
 from configs.general import MAX_TIMESTAMPS, BATCH_SIZE
 
-def get_loss(model, noise_adder, batch, timestep, device):
+def wasserstein_distance(real, pred):
+    return torch.tensor([torch.abs(real[i] - pred[i]).sum() for i in range(len(real))]).mean()
+
+
+def get_loss(model, noise_adder, batch, timestep, device, regularization = False):
     image, label = batch
     image_noisy, noise = noise_adder(image, timestep, device)
     noise_pred = model(image_noisy, timestep, label.to(device))
-    return F.l1_loss(noise, noise_pred)
+    if regularization:
+        reg_loss = model.get_l2_reg_loss()
+        return F.mse_loss(noise, noise_pred) + 0.1 * reg_loss
+    else:
+        return F.mse_loss(noise, noise_pred)
 
 def initialize_opts(args):
     tag = args.tag if args.tag=="" else "_"+args.tag+"_"
@@ -59,6 +68,9 @@ def parse_args():
     parser.add_argument("-d", "--dataset", type=DatasetTypes, choices=list(DatasetTypes), default=DatasetTypes.MAIN, help= "Chose training dataset")
     parser.add_argument("-e", "--device", type=str, default="cuda", help="Device to train onto")
     parser.add_argument("-t", "--tag", default = "", type=str, help ="unique name of this training process to name checkpoint after")
+    parser.add_argument("-po", "--plot-old", action="store_true", help ="use olderplotting while training")
+    parser.add_argument("-rl", "--reg_loss", action="store_true", help ="Use L2 Regularization")
+    parser.add_argument("--epochs", type=int, default = 100, help="Number of epochs")
     return parser.parse_args()
 
 def main(args):
@@ -72,20 +84,23 @@ def main(args):
     print(f"Model params: {total_params}")
     print(f"device: {device}")
     optimizer = Adam(model.parameters(), lr=0.001)
-    epochs = 100
+    epochs = args.epochs
+
 
     for epoch in tqdm(range(epochs), desc="Epochs", position=0):
         for batch in tqdm(dataloader, desc="Batches", position=1):
             optimizer.zero_grad()
 
             timestamp = torch.randint(0, MAX_TIMESTAMPS, (BATCH_SIZE,), device=device).long()
-            loss = get_loss(model, noise_adder, batch, timestamp, device)
+            loss = get_loss(model, noise_adder, batch, timestamp, device, args.reg_loss)
             loss.backward()
             optimizer.step()
 
-
         logging.info(f"Epoch {epoch} Loss: {loss.item()} ")
-        noise_adder.sample_plot_image(model, os.path.join(opts["checkpoints_dir"], f"results_{epoch}.png"))
+        if args.plot_old:
+            noise_adder.sample_plot_image_old(model, os.path.join(opts["checkpoints_dir"], f"results_{epoch}.png"))
+        else:
+            noise_adder.sample_plot_image(model, os.path.join(opts["checkpoints_dir"], f"results_{epoch}.png"))
         if epoch % 10 == 0:
             torch.save(model.state_dict(), os.path.join(opts["checkpoints_dir"], f"model_{epoch}.pth"))
 

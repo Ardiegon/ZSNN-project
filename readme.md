@@ -60,3 +60,13 @@ python src/scripts/generate.py -m UNet2DModelAdapted -c src/configs/models/image
 ```
 
 
+###  Do wytestowania
+
+### Wytestowane
+- Pretrening na datasetach tekstur przemysłowych, na CIFAR 10 
+- dodanie regularyzacji L2
+- przestrajanie parametrów
+- Zamiana funkcji kosztu na MSE
+- Pretrening na Motylach
+- Model wyostrzający na wyjściu preuczonego brancha
+
