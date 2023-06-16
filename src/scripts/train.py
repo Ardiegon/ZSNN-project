@@ -24,9 +24,12 @@ def wasserstein_distance(real, pred):
     return torch.tensor([torch.abs(real[i] - pred[i]).sum() for i in range(len(real))]).mean()
 
 
-def get_loss(model, noise_adder, batch, timestep, device, regularization = False):
+def get_loss(model, noise_adder, batch, timestep, device, regularization = False, single_channel=False):
     image, label, mask = batch
-    input_img = torch.concat([image, mask], dim=1)
+    if not single_channel:
+        input_img = torch.concat([image, mask], dim=1)
+    else:
+        input_img = image
     image_noisy, noise = noise_adder(input_img, timestep, device)
     noise_pred = model(image_noisy, timestep, label)
     if regularization:
@@ -74,7 +77,8 @@ def parse_args():
     parser.add_argument("-e", "--device", type=str, default="cuda", help="Device to train onto")
     parser.add_argument("-t", "--tag", default = "", type=str, help ="unique name of this training process to name checkpoint after")
     parser.add_argument("-po", "--plot-old", action="store_true", help ="use olderplotting while training")
-    parser.add_argument("-rl", "--reg_loss", action="store_true", help ="Use L2 Regularization")
+    parser.add_argument("-rl", "--reg-loss", action="store_true", help ="Use L2 Regularization")
+    parser.add_argument("-sc", "--single-channel", action="store_true", help ="Use only image top train")
     parser.add_argument("--epochs", type=int, default = 100, help="Number of epochs")
     return parser.parse_args()
 
@@ -96,7 +100,7 @@ def main(args):
             optimizer.zero_grad()
 
             timestamp = torch.randint(0, MAX_TIMESTAMPS, (BATCH_SIZE,), device=device).long()
-            loss = get_loss(model, noise_adder, batch, timestamp, device, args.reg_loss)
+            loss = get_loss(model, noise_adder, batch, timestamp, device, args.reg_loss, args.single_channel)
             loss.backward()
             optimizer.step()
 
