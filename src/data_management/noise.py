@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 from configs.general import IMG_SIZE
 from data_management import show_tensor_image
+from models.sharpener import sharpen_image
 
 class NoiseAdder():
     def __init__(self, all_timestamps, device) -> None:
@@ -16,7 +17,7 @@ class NoiseAdder():
         self.sqrt_one_minus_alphas_cumprod, \
         self.posterior_variance \
             = self.calculate_alpha_factors()
-
+    
     def calculate_alpha_factors(self):
         betas = torch.linspace(0.0001, 0.02, self.all_timestamps)
         alphas = 1. - betas
@@ -50,18 +51,22 @@ class NoiseAdder():
 
 
     @torch.no_grad()
-    def sample_timestep(self, model, x, t, y):
+    def sample_timestep(self, model, x, t, y=None):
         betas_t = self.get_index_from_list(self.betas, t, x.shape)
         sqrt_one_minus_alphas_cumprod_t = self.get_index_from_list(
             self.sqrt_one_minus_alphas_cumprod, t, x.shape
         )
         sqrt_recip_alphas_t = self.get_index_from_list(self.sqrt_recip_alphas, t, x.shape)
         
-        model_mean = sqrt_recip_alphas_t * (
-            x - betas_t * model(x, t, y) / sqrt_one_minus_alphas_cumprod_t
-        )
+        if y is not None:
+            model_mean = sqrt_recip_alphas_t * (
+                x - betas_t * model(x, t, y) / sqrt_one_minus_alphas_cumprod_t
+            )
+        else:
+            model_mean = sqrt_recip_alphas_t * (
+                x - betas_t * model(x, t) / sqrt_one_minus_alphas_cumprod_t
+            )
         posterior_variance_t = self.get_index_from_list(self.posterior_variance, t, x.shape)
-        
         if t == 0:
             return model_mean
         else:
@@ -93,3 +98,29 @@ class NoiseAdder():
                     backward_iter -= 1
             backward_iter = num_images - 1
         fig.savefig(path)
+        plt.clf()
+        plt.cla()
+        plt.close()
+
+    @torch.no_grad()
+    def sample_plot_image_old(self, model, path):
+        img_size = IMG_SIZE
+        img = torch.randn((1, 1, img_size, img_size), device=self.device)
+        num_images = 10
+        stepsize = int(self.all_timestamps/num_images)
+        fig, axs = plt.subplots(1, num_images)
+        backward_iter = 9
+        for i in range(0,self.all_timestamps)[::-1]:
+            t = torch.full((1,), i, device=self.device, dtype=torch.long)
+            img = self.sample_timestep(model, img, t)
+            img = torch.clamp(img, -1.0, 1.0)
+            if i % stepsize == 0:
+                output  = show_tensor_image(img.detach().cpu(), ax=axs[backward_iter])
+                if i == 0:
+                    plt.imsave(path.replace(".png", "_last.png"), sharpen_image(output))
+                axs[backward_iter].text(0.5,0.5, str(int(i/stepsize)+1))
+                backward_iter -= 1
+        fig.savefig(path)
+        plt.clf()
+        plt.cla()
+        plt.close()
