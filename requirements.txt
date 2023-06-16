@@ -1,3 +1,4 @@
+pillow==9.5.*
 opencv-python==4.7.0.72
 torch==2.0.*
 torchaudio==2.0.2
@@ -5,3 +6,4 @@ torchvision==0.15.2
 matplotlib==3.7.*
 pycocotools==2.0.*
 diffusers==0.16.*
+datasets==2.13.*

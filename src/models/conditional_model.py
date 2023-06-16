@@ -17,3 +17,9 @@ class ConditionModel(nn.Module):
 
         net_input = torch.cat((input, class_cond), 1)
         return self.model(net_input, timestamp).sample
+
+    def get_l2_reg_loss(self):
+        l2_loss = 0.0
+        for param in self.parameters():
+            l2_loss += torch.norm(param, p=2)
+        return l2_loss
