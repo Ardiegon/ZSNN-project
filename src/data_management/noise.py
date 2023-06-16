@@ -76,27 +76,33 @@ class NoiseAdder():
     @torch.no_grad()
     def sample_plot_image(self, model, path):
         img_size = IMG_SIZE
-        num_images = 10
-        base_img = torch.randn((1, 1, img_size, img_size), device=self.device)
+        num_images = 4
+        base_img = torch.randn((1, 2, img_size, img_size), device=self.device)
         stepsize = int(self.all_timestamps/num_images)
         n_classes = 1
         if hasattr(model, "n_classes"):
             n_classes = model.n_classes
-        fig, axs = plt.subplots(n_classes, num_images)
+        fig, axs = plt.subplots(n_classes, num_images*2)
         n_classes = torch.arange(0, n_classes, device=self.device)
-        backward_iter = num_images - 1
+        backward_iter = 2*num_images - 1
         for cond_class in n_classes:
             img = base_img
             for i in range(0,self.all_timestamps)[::-1]:
                 t = torch.full((1,), i, device=self.device, dtype=torch.long)
                 label = torch.unsqueeze(cond_class, dim=0)
                 img = self.sample_timestep(model, img, t, label)
-                img = torch.clamp(img, -1.0, 1.0)
+                mask = img[:, 1:2]
+                mask = torch.clamp(mask, -1.0, 1.0)
+                gen_img = img[:, 0:1]
+                gen_img = torch.clamp(gen_img, -1.0, 1.0)
                 if i % stepsize == 0:
-                    show_tensor_image(img.detach().cpu(), ax=axs[int(cond_class), backward_iter])
-                    axs[int(cond_class), backward_iter].text(0.5,0.5, str(int(i/stepsize)+1))
+                    show_tensor_image(gen_img.detach().cpu(), ax=axs[int(cond_class), backward_iter])
+                    axs[int(cond_class), backward_iter].text(0.5, 0.5, "img" + str(backward_iter + 1))
                     backward_iter -= 1
-            backward_iter = num_images - 1
+                    show_tensor_image(mask.detach().cpu(), ax=axs[int(cond_class), backward_iter])
+                    axs[int(cond_class), backward_iter].text(0.5, 0.5, "mask" + str(backward_iter + 1))
+                    backward_iter -= 1
+            backward_iter = 2 * num_images - 1
         fig.savefig(path)
         plt.clf()
         plt.cla()
@@ -115,7 +121,7 @@ class NoiseAdder():
             img = self.sample_timestep(model, img, t)
             img = torch.clamp(img, -1.0, 1.0)
             if i % stepsize == 0:
-                output  = show_tensor_image(img.detach().cpu(), ax=axs[backward_iter])
+                output = show_tensor_image(img.detach().cpu(), ax=axs[backward_iter])
                 if i == 0:
                     plt.imsave(path.replace(".png", "_last.png"), sharpen_image(output))
                 axs[backward_iter].text(0.5,0.5, str(int(i/stepsize)+1))
@@ -124,3 +130,4 @@ class NoiseAdder():
         plt.clf()
         plt.cla()
         plt.close()
+

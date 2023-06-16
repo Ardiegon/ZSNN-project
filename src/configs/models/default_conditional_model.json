@@ -1,19 +1,21 @@
 {
-  "sample_size":128,
-  "in_channels":6,
-  "out_channels":1,
-  "layers_per_block": 1,
-  "block_out_channels":[32, 64, 64],
+  "sample_size":64,
+  "in_channels":7,
+  "out_channels":2,
+  "layers_per_block":1,
+  "block_out_channels":[32, 64, 128, 256],
   "down_block_types":[
       "DownBlock2D",
+      "AttnDownBlock2D",
       "AttnDownBlock2D",
       "AttnDownBlock2D"
   ],
   "up_block_types":[
       "AttnUpBlock2D",
       "AttnUpBlock2D",
+      "AttnUpBlock2D",
       "UpBlock2D"
   ],
-  "dict_size": 10,
+  "dict_size": 20,
   "n_classes": 5
 }

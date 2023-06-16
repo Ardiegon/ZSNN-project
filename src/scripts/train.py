@@ -1,5 +1,7 @@
 import os
 import cv2
+import numpy as np
+import matplotlib.pyplot as plt
 import torch 
 import argparse
 import logging
@@ -8,7 +10,6 @@ import torch.nn.functional as F
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torch.optim import Adam
-import ot
 
 from models import get_model
 from data_management import DatasetTypes, get_dataset, show_tensor_image
@@ -18,19 +19,23 @@ from utils import get_current_time
 from configs.path import CHECKPOINTS_PATH
 from configs.general import MAX_TIMESTAMPS, BATCH_SIZE
 
+
 def wasserstein_distance(real, pred):
     return torch.tensor([torch.abs(real[i] - pred[i]).sum() for i in range(len(real))]).mean()
 
 
 def get_loss(model, noise_adder, batch, timestep, device, regularization = False):
-    image, label = batch
-    image_noisy, noise = noise_adder(image, timestep, device)
-    noise_pred = model(image_noisy, timestep, label.to(device))
+    image, label, mask = batch
+    input_img = torch.concat([image, mask], dim=1)
+    image_noisy, noise = noise_adder(input_img, timestep, device)
+    noise_pred = model(image_noisy, timestep, label)
     if regularization:
         reg_loss = model.get_l2_reg_loss()
-        return F.mse_loss(noise, noise_pred) + 0.1 * reg_loss
+        loss = F.mse_loss(noise, noise_pred) + 0.1 * reg_loss
     else:
-        return F.mse_loss(noise, noise_pred)
+        loss = F.mse_loss(noise, noise_pred)
+    return loss
+
 
 def initialize_opts(args):
     tag = args.tag if args.tag=="" else "_"+args.tag+"_"
@@ -85,7 +90,6 @@ def main(args):
     print(f"device: {device}")
     optimizer = Adam(model.parameters(), lr=0.001)
     epochs = args.epochs
-
 
     for epoch in tqdm(range(epochs), desc="Epochs", position=0):
         for batch in tqdm(dataloader, desc="Batches", position=1):
