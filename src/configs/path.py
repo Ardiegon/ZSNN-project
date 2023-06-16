@@ -1,6 +1,6 @@
 import os 
 
-MAIN_DATASET_DIR_PATH = "/home/kuba/data/Console_sliced"
+MAIN_DATASET_DIR_PATH = "Track2\\data\\Console_sliced"
 MAIN_TRAIN_DATASET_DIR = os.path.join(MAIN_DATASET_DIR_PATH, "train")
 MAIN_ANNOTATIONS_PATH = os.path.join(MAIN_TRAIN_DATASET_DIR, "_annotations.coco.json")
 

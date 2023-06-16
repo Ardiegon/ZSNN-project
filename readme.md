@@ -39,9 +39,9 @@ If you want to use pretreined model weights in generation (recommended) and trai
 
 ### Training
 
-HuggingFace generator train:
+HuggingFace generator train on butterflies dataset:
 ```bash
- python src/scripts/train.py -m UNet2DModelAdapted -c src/configs/models/default_UNet2DModelAdapted.json
+ python src/scripts/train.py -m UNet2DModelAdapted -c src/configs/models/default_UNet2DModelAdapted.json -d butterflies -po -sc
 ```
 
 ConditionalModel train:
