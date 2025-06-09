@@ -1,5 +1,5 @@
-# ZSNN Projekt
-Image generation with diffusion models
+# DiffusionModelForDatasetExpansion
+Generating additional data with diffusion models to increase the number of samples in small datasets. The distribution of data samples matches the original dataset while introducing new information in under-sampled areas.
 
 ## Instalation
 For Windows user paste following code
@@ -59,14 +59,4 @@ python src/scripts/train.py -m AggregatedModel -c src/configs/models/default_agg
 python src/scripts/generate.py -m UNet2DModelAdapted -c src/configs/models/image_generator.json
 ```
 
-
-###  Do wytestowania
-
-### Wytestowane
-- Pretrening na datasetach tekstur przemysłowych, na CIFAR 10 
-- dodanie regularyzacji L2
-- przestrajanie parametrów
-- Zamiana funkcji kosztu na MSE
-- Pretrening na Motylach
-- Model wyostrzający na wyjściu preuczonego brancha
 
